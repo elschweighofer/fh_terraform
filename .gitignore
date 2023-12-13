@@ -36,3 +36,6 @@ terraform.rc
 
 # Environment
 .env
+
+# Python
+venv/
