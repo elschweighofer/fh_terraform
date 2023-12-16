@@ -40,3 +40,4 @@ terraform.rc
 # Python
 venv/
 .terraform.lock.hcl
+function/__azurite_db_table__.json
