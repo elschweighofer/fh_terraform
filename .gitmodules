@@ -1,0 +1,3 @@
+[submodule "azure_function"]
+	path = azure_function
+	url = https://github.com/elschweighofer/azure_function
