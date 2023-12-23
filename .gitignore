@@ -37,9 +37,7 @@ terraform.rc
 # Environment
 .env
 
-# Python
-venv/
-.terraform.lock.hcl
-function/__azurite_db_table__.json
-function/
+
+# vscode 
 .vscode
+terraform/.terraform.lock.hcl
