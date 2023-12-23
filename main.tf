@@ -15,5 +15,30 @@ terraform {
   }
 }
 
-resource "azurerm_app_service_plan" "ASP-vscode-function-2-1c21" {
+# terraform/text.tf
+
+# Configure the Microsoft Azure Provider
+provider "azurerm" {
+  features {}
+}
+resource "random_pet" "pet" {
+
+}
+resource "random_id" "id" {
+  byte_length = 8
+
+}
+
+# Create a resource group
+resource "azurerm_resource_group" "rg" {
+  name     = "${var.project}-${var.environment}-rg"
+  location = "West Europe"
+}
+# Create a TextAnalyticsServices
+resource "azurerm_cognitive_account" "text-analytics" {
+  name                = "${var.project}-${var.environment}-text-analytic"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  kind                = "TextAnalytics"
+  sku_name            = "F0" 
 }
