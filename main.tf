@@ -42,3 +42,15 @@ resource "azurerm_cognitive_account" "text-analytics" {
   kind                = "TextAnalytics"
   sku_name            = "F0"
 }
+resource "azurerm_app_service_plan" "asp" {
+  name                = "${var.project}-${var.environment}-app-service-plan"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  kind                = "FunctionApp"
+
+  sku {
+    tier = "Dynamic"
+    size = "Y1"
+  }
+
+}
