@@ -41,3 +41,4 @@ terraform.rc
 venv/
 .terraform.lock.hcl
 function/__azurite_db_table__.json
+function/
