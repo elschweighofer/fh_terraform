@@ -84,36 +84,13 @@ resource "azurerm_function_app" "vscode-function-2" {
   version                    = "~4"
   os_type                    = "linux"
   app_settings = {
-    AZURE_LANGUAGE_ENDPOINT  = azurerm_cognitive_account.text-analytics.endpoint
-    AZURE_LANGUAGE_KEY       = azurerm_cognitive_account.text-analytics.primary_access_key
-    AzureWebJobsFeatureFlags = "EnableWorkerIndexing"
-    FUNCTIONS_WORKER_RUNTIME = "python"
+    "AZURE_LANGUAGE_ENDPOINT"  = azurerm_cognitive_account.text-analytics.endpoint
+    "AZURE_LANGUAGE_KEY"       = azurerm_cognitive_account.text-analytics.primary_access_key
+    "AzureWebJobsFeatureFlags" = "EnableWorkerIndexing"
+    "FUNCTIONS_WORKER_RUNTIME" = "python"
+    "WEBSITE_RUN_FROM_PACKAGE" = "1"
   }
   site_config {
   }
 
-}
-resource "azurerm_function_app_function" "http_trigger" {
-  name            = "${azurerm_function_app.vscode-function-2.name}-function"
-  function_app_id = azurerm_function_app.vscode-function-2.id
-  language        = "Python"
-  config_json = jsonencode({
-    "bindings" = [
-      {
-        "authLevel" = "function"
-        "direction" = "in"
-        "methods" = [
-          "get",
-          "post",
-        ]
-        "name" = "req"
-        "type" = "httpTrigger"
-      },
-      {
-        "direction" = "out"
-        "name"      = "$return"
-        "type"      = "http"
-      },
-    ]
-  })
 }
