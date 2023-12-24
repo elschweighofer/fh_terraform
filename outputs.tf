@@ -23,7 +23,3 @@ output "azurerm_cognitive_account_key_secondary" {
   description = "Primary access key"
   sensitive   = true
 }
-output "azurerm_linux_function_app_publishing_profile" {
-  value = azurerm_linux_function_app.vscode-function-2.app_settings
-  sensitive = true
-}
