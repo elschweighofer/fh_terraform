@@ -1,34 +1,6 @@
 # terraform/main.tf
 
-# We strongly recommend using the required_providers block to set the
-# Azure Provider source and version being used
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "=3.85.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "=3.6.0"
-    }
-  }
-  # Update this block with the location of your terraform state file
-  backend "azurerm" {
-    resource_group_name  = "cloud-shell-storage-westeurope"
-    storage_account_name = "csb1003200321a68be4"
-    container_name       = "tfstate"
-    key                  = "terraform.tfstate"
-    use_oidc             = true
-  }
-}
-# terraform/text.tf
 
-# Configure the Microsoft Azure Provider
-provider "azurerm" {
-  features {}
-  use_oidc = true
-}
 resource "random_pet" "pet" {
 
 }
@@ -88,20 +60,13 @@ resource "azurerm_function_app" "vscode-function-2" {
     "AZURE_LANGUAGE_KEY"       = azurerm_cognitive_account.text-analytics.primary_access_key
     "AzureWebJobsFeatureFlags" = "EnableWorkerIndexing"
     "FUNCTIONS_WORKER_RUNTIME" = "python"
-    "WEBSITE_RUN_FROM_PACKAGE" = "1"
+    "WEBSITE_RUN_FROM_PACKAGE" = azurerm_storage_blob.storage_blob_function.url
   }
   site_config {
   }
 
 }
-resource "azurerm_function_app_function" "function-1" {
-  name            = "${azurerm_function_app.vscode-function-2}-function-1"
-  function_app_id = azurerm_function_app.vscode-function-2.id
-  config_json = jsonencode({
 
-  })
-
-}
 # zip the source
 # https://xebia.com/blog/deploying-an-azure-function-with-terraform/
 data "archive_file" "function" {
@@ -117,14 +82,23 @@ resource "null_resource" "pip" {
   }
   provisioner "local-exec" {
     command     = "pip install --target='.python_packages/lib/site-packages' -r requirements.txt"
-    working_dir = "${path.module}/functions"
+    working_dir = "${path.module}/azure_function"
   }
+}
+
+
+
+
+
+resource "azurerm_storage_container" "function-container" {
+  name                 = "azure-function-releases"
+  storage_account_name = azurerm_storage_account.storage.name
 }
 
 resource "azurerm_storage_blob" "storage_blob_function" {
   name                   = "functions-${substr(data.archive_file.function.output_md5, 0, 6)}.zip"
-  storage_account_name   = azurerm_storage_account.storage_account_function.name
-  storage_container_name = azurerm_storage_container.storage_container_function.name
+  storage_account_name   = azurerm_storage_account.storage.name
+  storage_container_name = azurerm_storage_container.function-container.name
   type                   = "Block"
   content_md5            = data.archive_file.function.output_md5
   source                 = "${path.module}/azure_function.zip"

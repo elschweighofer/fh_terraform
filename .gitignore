@@ -42,3 +42,4 @@ terraform.rc
 .vscode
 terraform/.terraform.lock.hcl
 sp.json
+azure_function.zip
