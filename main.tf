@@ -94,3 +94,29 @@ resource "azurerm_function_app" "vscode-function-2" {
   }
 
 }
+resource "azurerm_function_app_function" "function-1" {
+  name = "${azurerm_function_app.vscode-function-2}-function-1"
+  function_app_id = azurerm_function_app.vscode-function-2.id
+  config_json = jsonencode({
+
+  })
+  
+}
+# zip the source
+# https://xebia.com/blog/deploying-an-azure-function-with-terraform/
+data "archive_file" "function" {
+  type        = "zip"
+  source_dir  = "${path.module}/azure_function"
+  output_path = "${path.module}/azure_function.zip"
+
+  depends_on = [null_resource.pip]
+}
+resource "null_resource" "pip" {
+  triggers = {
+    requirements_md5 = "${filemd5("${path.module}/azure_function/requirements.txt")}"
+  }
+  provisioner "local-exec" {    
+    command = "pip install --target='.python_packages/lib/site-packages' -r requirements.txt"
+    working_dir = "${path.module}/functions"
+  }
+}
