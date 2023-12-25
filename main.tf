@@ -95,12 +95,12 @@ resource "azurerm_function_app" "vscode-function-2" {
 
 }
 resource "azurerm_function_app_function" "function-1" {
-  name = "${azurerm_function_app.vscode-function-2}-function-1"
+  name            = "${azurerm_function_app.vscode-function-2}-function-1"
   function_app_id = azurerm_function_app.vscode-function-2.id
   config_json = jsonencode({
 
   })
-  
+
 }
 # zip the source
 # https://xebia.com/blog/deploying-an-azure-function-with-terraform/
@@ -115,8 +115,17 @@ resource "null_resource" "pip" {
   triggers = {
     requirements_md5 = "${filemd5("${path.module}/azure_function/requirements.txt")}"
   }
-  provisioner "local-exec" {    
-    command = "pip install --target='.python_packages/lib/site-packages' -r requirements.txt"
+  provisioner "local-exec" {
+    command     = "pip install --target='.python_packages/lib/site-packages' -r requirements.txt"
     working_dir = "${path.module}/functions"
   }
+}
+
+resource "azurerm_storage_blob" "storage_blob_function" {
+  name                   = "functions-${substr(data.archive_file.function.output_md5, 0, 6)}.zip"
+  storage_account_name   = azurerm_storage_account.storage_account_function.name
+  storage_container_name = azurerm_storage_container.storage_container_function.name
+  type                   = "Block"
+  content_md5            = data.archive_file.function.output_md5
+  source                 = "${path.module}/azure_function.zip"
 }

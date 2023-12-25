@@ -2,18 +2,18 @@
 
 variable "project" {
   type        = string
-  default = "translator"
+  default     = "translator"
   description = "Project name"
 }
 
 variable "environment" {
   type        = string
-  default = "dev"
+  default     = "dev"
   description = "Environment (dev / stage / prod)"
 }
 
 variable "location" {
   type        = string
-  default = "West Europe"
+  default     = "West Europe"
   description = "Azure region to deploy module to"
 }
