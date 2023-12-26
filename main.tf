@@ -1,4 +1,4 @@
-# terraform/main.tf
+# main.tf
 
 
 resource "random_pet" "pet" {
