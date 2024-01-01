@@ -41,7 +41,7 @@ resource "azurerm_app_service_plan" "asp" {
 
 
 
-resource "azurerm_function_app" "vscode-function-2" {
+resource "azurerm_function_app" "function-app" {
   name                       = "${var.project}-function-app"
   resource_group_name        = azurerm_resource_group.rg.name
   location                   = azurerm_resource_group.rg.location
@@ -84,6 +84,7 @@ data "archive_file" "function" {
 resource "null_resource" "pip" {
   triggers = {
     requirements_md5 = "${filemd5("${path.module}/azure_function/requirements.txt")}"
+    main_md5 = "${filemd5("${path.module}/main.tf")}"
   }
   provisioner "local-exec" {
     command     = "pip install --target='.python_packages/lib/site-packages' -r requirements.txt"
