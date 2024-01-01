@@ -16,12 +16,15 @@ resource "azurerm_cognitive_account" "text-analytics" {
   sku_name            = "F0"
 }
 resource "azurerm_storage_account" "storage" {
-  name                     = "${var.project}${var.environment}storage"
+  name                     = "${var.project}-${var.environment}-storage"
   account_tier             = "Standard"
   account_replication_type = "LRS"
   location                 = azurerm_resource_group.rg.location
   resource_group_name      = azurerm_resource_group.rg.name
 }
+
+
+
 resource "azurerm_service_plan" "asp" {
   name                = "${var.project}${var.environment}appserviceplan"
   resource_group_name = azurerm_resource_group.rg.name
@@ -44,11 +47,14 @@ resource "azurerm_linux_function_app" "function-app" {
     type = "SystemAssigned"
   }
   app_settings = {
-    "AZURE_LANGUAGE_ENDPOINT"  = azurerm_cognitive_account.text-analytics.endpoint
-    "AZURE_LANGUAGE_KEY"       = azurerm_cognitive_account.text-analytics.primary_access_key
-    "AzureWebJobsFeatureFlags" = "EnableWorkerIndexing"
-    "FUNCTIONS_WORKER_RUNTIME" = "python"
-    "WEBSITE_RUN_FROM_PACKAGE" = azurerm_storage_blob.storage_blob_function.url
+    "AZURE_LANGUAGE_ENDPOINT"                  = azurerm_cognitive_account.text-analytics.endpoint
+    "AZURE_LANGUAGE_KEY"                       = azurerm_cognitive_account.text-analytics.primary_access_key
+    "AzureWebJobsFeatureFlags"                 = "EnableWorkerIndexing"
+    "AzureWebJobsDashboard"                    = "DefaultEndpointsProtocol=https;AccountName=${out.storage_endpoint};AccountKey=${out.storage_access_key};EndpointSuffix=core.windows.net"
+    "FUNCTIONS_WORKER_RUNTIME"                 = "python"
+    "FUNCTIONS_EXTENSION_VERSION"              = "~4"
+    "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING" = "DefaultEndpointsProtocol=https;AccountName=${out.storage_endpoint};AccountKey=${out.storage_access_key};EndpointSuffix=core.windows.net"
+    "WEBSITE_CONTENTSHARE"                     = "translator-function-app-8dad"
   }
   site_config {
     application_stack {
