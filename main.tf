@@ -50,6 +50,8 @@ resource "azurerm_function_app" "function-app" {
   storage_account_access_key = azurerm_storage_account.storage.primary_access_key
   version                    = "~4"
   os_type                    = "linux"
+  runtime_version            = "python310"
+
   identity {
     type = "SystemAssigned"
   }
