@@ -22,21 +22,14 @@ resource "azurerm_storage_account" "storage" {
   location                 = azurerm_resource_group.rg.location
   resource_group_name      = azurerm_resource_group.rg.name
 }
-resource "azurerm_app_service_plan" "asp" {
+resource "azurerm_service_plan" "asp" {
   name                = "${var.project}${var.environment}appserviceplan"
   resource_group_name = azurerm_resource_group.rg.name
 
   location = azurerm_resource_group.rg.location
   kind     = "FunctionApp"
-  sku {
-    tier = "Dynamic"
-    size = "Y1"
-  }
-  lifecycle {
-    ignore_changes = [
-      kind
-    ]
-  }
+  os_type  = "Linux"
+  sku_name = "Y1"
 }
 
 
