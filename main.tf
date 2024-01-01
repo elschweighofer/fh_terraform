@@ -65,6 +65,13 @@ resource "azurerm_function_app" "vscode-function-2" {
 
 }
 
+resource "azurerm_application_insights" "insights" {
+  name = "${var.project}-${var.environment}-insights"
+  location = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  application_type = "other"
+  
+}
 # zip the source
 # https://xebia.com/blog/deploying-an-azure-function-with-terraform/
 data "archive_file" "function" {
