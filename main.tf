@@ -25,7 +25,9 @@ resource "azurerm_storage_account" "storage" {
 resource "azurerm_app_service_plan" "asp" {
   name                = "${var.project}${var.environment}appserviceplan"
   resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+
+  location = azurerm_resource_group.rg.location
+  kind     = "FunctionApp"
   sku {
     tier = "Dynamic"
     size = "Y1"
@@ -48,6 +50,9 @@ resource "azurerm_function_app" "vscode-function-2" {
   storage_account_access_key = azurerm_storage_account.storage.primary_access_key
   version                    = "~4"
   os_type                    = "linux"
+  identity {
+    type = "SystemAssigned"
+  }
   app_settings = {
     "AZURE_LANGUAGE_ENDPOINT"  = azurerm_cognitive_account.text-analytics.endpoint
     "AZURE_LANGUAGE_KEY"       = azurerm_cognitive_account.text-analytics.primary_access_key
@@ -78,8 +83,6 @@ resource "null_resource" "pip" {
     working_dir = "${path.module}/azure_function"
   }
 }
-
-
 
 
 
