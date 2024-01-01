@@ -45,7 +45,7 @@ resource "azurerm_linux_function_app" "function-app" {
   name                       = "${var.project}-function-app"
   resource_group_name        = azurerm_resource_group.rg.name
   location                   = azurerm_resource_group.rg.location
-  service_plan_id        = azurerm_app_service_plan.asp.id
+  service_plan_id            = azurerm_app_service_plan.asp.id
   storage_account_name       = azurerm_storage_account.storage.name
   storage_account_access_key = azurerm_storage_account.storage.primary_access_key
   identity {
@@ -64,6 +64,36 @@ resource "azurerm_linux_function_app" "function-app" {
     }
   }
 
+}
+
+
+
+resource "azurerm_function_app_function" "example" {
+  name            = "${var.project}-function-app-function"
+  function_app_id = azurerm_linux_function_app.function-app.id
+  language        = "Python"
+  test_data = jsonencode({
+    "name" = "Azure"
+  })
+  config_json = jsonencode({
+    "bindings" = [
+      {
+        "authLevel" = "function"
+        "direction" = "in"
+        "methods" = [
+          "get",
+          "post",
+        ]
+        "name" = "req"
+        "type" = "httpTrigger"
+      },
+      {
+        "direction" = "out"
+        "name"      = "$return"
+        "type"      = "http"
+      },
+    ]
+  })
 }
 
 resource "azurerm_application_insights" "insights" {
