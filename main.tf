@@ -1,13 +1,6 @@
 # main.tf
 
 
-resource "random_pet" "pet" {
-
-}
-resource "random_id" "id" {
-  byte_length = 8
-
-}
 
 # Create a resource group
 resource "azurerm_resource_group" "rg" {
