@@ -149,3 +149,7 @@ jobs:
     # Terraform Apply
     - name: Terraform Apply
       run: terraform apply -auto-approve tfplan
+
+   - name: Terraform Graph
+     run: terraform graph
+   
