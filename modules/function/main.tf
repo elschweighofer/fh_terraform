@@ -39,54 +39,30 @@ resource "azurerm_linux_function_app" "function-app" {
   service_plan_id            = azurerm_service_plan.asp.id
   storage_account_name       = azurerm_storage_account.storage.name
   storage_account_access_key = azurerm_storage_account.storage.primary_access_key
+
+  app_settings = {
+    AzureWebJobsDisableHomepage    = true
+    SCM_DO_BUILD_DURING_DEPLOYMENT = true
+    ENABLE_ORYX_BUILD              = true
+    FUNCTIONS_WORKER_RUNTIME       = "python"
+    AZURE_LANGUAGE_ENDPOINT        = var.endpoint
+    AZURE_LANGUAGE_KEY             = var.key
+
+  }
+
+  site_config {
+    application_stack {
+      python_version = "3.10"
+    }
+  }
   identity {
     type = "SystemAssigned"
   }
-  app_settings = {
-    "AZURE_LANGUAGE_ENDPOINT"     = var.endpoint
-    "AZURE_LANGUAGE_KEY"          = var.key
-    "AZURE_TRANSLATION_ENDPOINT"  = ""
-    "AZURE_TRANSLATION_KEY"  = ""
-    "AzureWebJobsFeatureFlags"    = "EnableWorkerIndexing"
-    "FUNCTIONS_WORKER_RUNTIME"    = "python"
-    "FUNCTIONS_EXTENSION_VERSION" = "~4"
-  }
-  site_config {
-    application_stack {
-      python_version = "3.9"
-    }
-  }
+
 
 }
 
-
-# Actual Endpoints
-resource "azurerm_function_app_function" "detect_language" {
-  name = "detect_language"
-  function_app_id = azurerm_linux_function_app.function-app.id
-  config_json = jsonencode({
-            "name": "detect_language",
-            "entryPoint": "detect_language",
-            "scriptFile": "function_app.py",
-            "language": "python",
-            "functionDirectory": "/home/site/wwwroot",
-            "bindings": [
-                {
-                    "direction": "IN",
-                    "type": "httpTrigger",
-                    "name": "req",
-                    "authLevel": "ANONYMOUS",
-                    "route": "detect_language"
-                },
-                {
-                    "direction": "OUT",
-                    "type": "http",
-                    "name": "$return"
-                }
-            ]
-        })
-}
-
+# Monitoring / Logs
 resource "azurerm_application_insights" "insights" {
   name                = "${var.project}-${var.environment}-insights"
   location            = var.location
@@ -94,6 +70,42 @@ resource "azurerm_application_insights" "insights" {
   application_type    = "other"
 
 }
+
+# Actual Endpoints
+resource "azurerm_function_app_function" "http_example" {
+  name            = "http_example"
+  function_app_id = azurerm_linux_function_app.function-app.id
+  language        = "Python"
+  test_data = jsonencode({
+    "name" = "Azure"
+  })
+
+  file {
+    name    = "function_app.py"
+    content = file("azure_function/function_app.py")
+  }
+  config_json = jsonencode({
+    "bindings" : [
+      {
+        "direction" : "in",
+        "type" : "httpTrigger",
+        "authLevel" : "ANONYMOUS",
+        "name" = "req"
+
+        "methods" = [
+          "get",
+          "post",
+        ]
+      },
+      {
+        "direction" : "out",
+        "type" : "http",
+        "name" : "$return"
+      }
+    ]
+  })
+}
+
 # zip the source
 # https://xebia.com/blog/deploying-an-azure-function-with-terraform/
 data "archive_file" "function" {
