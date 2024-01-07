@@ -2,7 +2,7 @@
 
 variable "project" {
   type        = string
-  default     = "translator"
+  default     = "fhterraform"
   description = "Project name"
 }
 
