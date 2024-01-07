@@ -1,3 +1,5 @@
+# Storage
+
 resource "azurerm_storage_account" "storage" {
   name                     = "${var.project}${var.environment}storage"
   account_tier             = "Standard"
@@ -5,9 +7,20 @@ resource "azurerm_storage_account" "storage" {
   location                 = var.location
   resource_group_name      = var.resource_group_name
 }
+resource "azurerm_storage_container" "function-container" {
+  name                 = "azure-function-releases"
+  storage_account_name = azurerm_storage_account.storage.name
+}
 
-
-
+resource "azurerm_storage_blob" "storage_blob_function" {
+  name                   = "functions-${substr(data.archive_file.function.output_md5, 0, 6)}.zip"
+  storage_account_name   = azurerm_storage_account.storage.name
+  storage_container_name = azurerm_storage_container.function-container.name
+  type                   = "Block"
+  content_md5            = data.archive_file.function.output_md5
+  source                 = "${path.root}/azure_function.zip"
+}
+# App
 resource "azurerm_service_plan" "asp" {
   name                = "${var.project}${var.environment}appserviceplan"
   resource_group_name = var.resource_group_name
@@ -32,6 +45,8 @@ resource "azurerm_linux_function_app" "function-app" {
   app_settings = {
     "AZURE_LANGUAGE_ENDPOINT"     = var.endpoint
     "AZURE_LANGUAGE_KEY"          = var.key
+    "AZURE_TRANSLATION_ENDPOINT"  = ""
+    "AZURE_TRANSLATION_KEY"  = ""
     "AzureWebJobsFeatureFlags"    = "EnableWorkerIndexing"
     "FUNCTIONS_WORKER_RUNTIME"    = "python"
     "FUNCTIONS_EXTENSION_VERSION" = "~4"
@@ -44,6 +59,8 @@ resource "azurerm_linux_function_app" "function-app" {
 
 }
 
+
+# Actual Endpoints
 resource "azurerm_function_app_function" "detect_language" {
   name = "detect_language"
   function_app_id = azurerm_linux_function_app.function-app.id
@@ -98,17 +115,3 @@ resource "null_resource" "pip" {
 }
 
 
-
-resource "azurerm_storage_container" "function-container" {
-  name                 = "azure-function-releases"
-  storage_account_name = azurerm_storage_account.storage.name
-}
-
-resource "azurerm_storage_blob" "storage_blob_function" {
-  name                   = "functions-${substr(data.archive_file.function.output_md5, 0, 6)}.zip"
-  storage_account_name   = azurerm_storage_account.storage.name
-  storage_container_name = azurerm_storage_container.function-container.name
-  type                   = "Block"
-  content_md5            = data.archive_file.function.output_md5
-  source                 = "${path.root}/azure_function.zip"
-}
