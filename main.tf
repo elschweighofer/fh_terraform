@@ -45,8 +45,8 @@ module "app" {
   resource_group_name = azurerm_resource_group.rg.name
 
   endpoint = module.text_analytics.analytics_endpoint
-  key         = module.text_analytics.analytics_key_secondary
-  
+  key      = module.text_analytics.analytics_key_secondary
+
   project     = var.project
   environment = var.environment
   location    = var.location
