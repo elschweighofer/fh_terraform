@@ -44,34 +44,30 @@ resource "azurerm_linux_function_app" "function-app" {
 
 }
 
-
-
-resource "azurerm_function_app_function" "function-app-function" {
-  name            = "${var.project}-function-app-function"
+resource "azurerm_function_app_function" "detect_language" {
+  name = "detect_language"
   function_app_id = azurerm_linux_function_app.function-app.id
-  language        = "Python"
-  test_data = jsonencode({
-    "name" = "Azure"
-  })
   config_json = jsonencode({
-    "bindings" = [
-      {
-        "authLevel" = "function"
-        "direction" = "in"
-        "methods" = [
-          "get",
-          "post",
-        ]
-        "name" = "req"
-        "type" = "httpTrigger"
-      },
-      {
-        "direction" = "out"
-        "name"      = "$return"
-        "type"      = "http"
-      },
-    ]
-  })
+            "name": "detect_language",
+            "entryPoint": "detect_language",
+            "scriptFile": "function_app.py",
+            "language": "python",
+            "functionDirectory": "/home/site/wwwroot",
+            "bindings": [
+                {
+                    "direction": "IN",
+                    "type": "httpTrigger",
+                    "name": "req",
+                    "authLevel": "ANONYMOUS",
+                    "route": "detect_language"
+                },
+                {
+                    "direction": "OUT",
+                    "type": "http",
+                    "name": "$return"
+                }
+            ]
+        })
 }
 
 resource "azurerm_application_insights" "insights" {
