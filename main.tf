@@ -1,138 +1,54 @@
-# main.tf
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "=3.85.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "=3.6.0"
+    }
+  }
+  # Update this block with the location of your terraform state file
+  backend "azurerm" {
+    resource_group_name  = "cloud-shell-storage-westeurope"
+    storage_account_name = "csb1003200321a68be4"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+    use_oidc             = true
+  }
+}
 
-
-
+# Configure the Microsoft Azure Provider
+provider "azurerm" {
+  features {}
+  use_oidc = true
+}
 # Create a resource group
 resource "azurerm_resource_group" "rg" {
   name     = "${var.project}-${var.environment}-rg"
   location = "West Europe"
 }
-# Create a TextAnalyticsServices
-resource "azurerm_cognitive_account" "text-analytics" {
-  name                = "${var.project}-${var.environment}-text-analytic"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  kind                = "TextAnalytics"
-  sku_name            = "F0"
-}
-resource "azurerm_storage_account" "storage" {
-  name                     = "${var.project}-${var.environment}-storage"
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  location                 = azurerm_resource_group.rg.location
-  resource_group_name      = azurerm_resource_group.rg.name
-}
 
 
-
-resource "azurerm_service_plan" "asp" {
-  name                = "${var.project}${var.environment}appserviceplan"
+module "text_analytics" {
+  source              = "./modules/text_analytics"
   resource_group_name = azurerm_resource_group.rg.name
 
-  location = azurerm_resource_group.rg.location
-  os_type  = "Linux"
-  sku_name = "Y1"
+  project     = var.project
+  environment = var.environment
+  location    = var.location
 }
 
-
-
-resource "azurerm_linux_function_app" "function-app" {
-  name                       = "${var.project}-function-app"
-  resource_group_name        = azurerm_resource_group.rg.name
-  location                   = azurerm_resource_group.rg.location
-  service_plan_id            = azurerm_service_plan.asp.id
-  storage_account_name       = azurerm_storage_account.storage.name
-  storage_account_access_key = azurerm_storage_account.storage.primary_access_key
-  identity {
-    type = "SystemAssigned"
-  }
-  app_settings = {
-    "AZURE_LANGUAGE_ENDPOINT"                  = azurerm_cognitive_account.text-analytics.endpoint
-    "AZURE_LANGUAGE_KEY"                       = azurerm_cognitive_account.text-analytics.primary_access_key
-    "AzureWebJobsFeatureFlags"                 = "EnableWorkerIndexing"
-    "AzureWebJobsDashboard"                    = "DefaultEndpointsProtocol=https;AccountName=${out.storage_endpoint};AccountKey=${out.storage_access_key};EndpointSuffix=core.windows.net"
-    "FUNCTIONS_WORKER_RUNTIME"                 = "python"
-    "FUNCTIONS_EXTENSION_VERSION"              = "~4"
-    "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING" = "DefaultEndpointsProtocol=https;AccountName=${out.storage_endpoint};AccountKey=${out.storage_access_key};EndpointSuffix=core.windows.net"
-    "WEBSITE_CONTENTSHARE"                     = "translator-function-app-8dad"
-  }
-  site_config {
-    application_stack {
-      python_version = "3.9"
-    }
-  }
-
-}
-
-
-
-resource "azurerm_function_app_function" "example" {
-  name            = "${var.project}-function-app-function"
-  function_app_id = azurerm_linux_function_app.function-app.id
-  language        = "Python"
-  test_data = jsonencode({
-    "name" = "Azure"
-  })
-  config_json = jsonencode({
-    "bindings" = [
-      {
-        "authLevel" = "function"
-        "direction" = "in"
-        "methods" = [
-          "get",
-          "post",
-        ]
-        "name" = "req"
-        "type" = "httpTrigger"
-      },
-      {
-        "direction" = "out"
-        "name"      = "$return"
-        "type"      = "http"
-      },
-    ]
-  })
-}
-
-resource "azurerm_application_insights" "insights" {
-  name                = "${var.project}-${var.environment}-insights"
-  location            = azurerm_resource_group.rg.location
+module "app" {
+  source              = "./modules/function"
   resource_group_name = azurerm_resource_group.rg.name
-  application_type    = "other"
 
-}
-# zip the source
-# https://xebia.com/blog/deploying-an-azure-function-with-terraform/
-data "archive_file" "function" {
-  type        = "zip"
-  source_dir  = "${path.module}/azure_function"
-  output_path = "${path.module}/azure_function.zip"
+  endpoint = module.text_analytics.analytics_endpoint
 
-  depends_on = [null_resource.pip]
-}
-resource "null_resource" "pip" {
-  triggers = {
-    requirements_md5 = "${filemd5("${path.module}/azure_function/requirements.txt")}"
-    main_md5         = "${filemd5("${path.module}/main.tf")}"
-  }
-  provisioner "local-exec" {
-    command     = "pip install --target='.python_packages/lib/site-packages' -r requirements.txt"
-    working_dir = "${path.module}/azure_function"
-  }
-}
+  key         = module.text_analytics.analytics_key_secondary
+  project     = var.project
+  environment = var.environment
+  location    = var.location
 
-
-
-resource "azurerm_storage_container" "function-container" {
-  name                 = "azure-function-releases"
-  storage_account_name = azurerm_storage_account.storage.name
-}
-
-resource "azurerm_storage_blob" "storage_blob_function" {
-  name                   = "functions-${substr(data.archive_file.function.output_md5, 0, 6)}.zip"
-  storage_account_name   = azurerm_storage_account.storage.name
-  storage_container_name = azurerm_storage_container.function-container.name
-  type                   = "Block"
-  content_md5            = data.archive_file.function.output_md5
-  source                 = "${path.module}/azure_function.zip"
 }
