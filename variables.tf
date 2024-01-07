@@ -2,7 +2,7 @@
 
 variable "project" {
   type        = string
-  default     = "fhterraform"
+  default     = "cloud-platforms-fh"
   description = "Project name"
 }
 
