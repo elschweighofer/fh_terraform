@@ -12,14 +12,6 @@ resource "azurerm_storage_container" "function-container" {
   storage_account_name = azurerm_storage_account.storage.name
 }
 
-resource "azurerm_storage_blob" "storage_blob_function" {
-  name                   = "functions-${substr(data.archive_file.function.output_md5, 0, 6)}.zip"
-  storage_account_name   = azurerm_storage_account.storage.name
-  storage_container_name = azurerm_storage_container.function-container.name
-  type                   = "Block"
-  content_md5            = data.archive_file.function.output_md5
-  source                 = "${path.root}/azure_function.zip"
-}
 # App
 resource "azurerm_service_plan" "asp" {
   name                = "${var.project}${var.environment}appserviceplan"
@@ -105,25 +97,4 @@ resource "azurerm_function_app_function" "http_example" {
     ]
   })
 }
-
-# zip the source
-# https://xebia.com/blog/deploying-an-azure-function-with-terraform/
-data "archive_file" "function" {
-  type        = "zip"
-  source_dir  = "${path.root}/azure_function"
-  output_path = "${path.root}/azure_function.zip"
-
-  depends_on = [null_resource.pip]
-}
-resource "null_resource" "pip" {
-  triggers = {
-    requirements_md5 = "${filemd5("${path.root}/azure_function/requirements.txt")}"
-    main_md5         = "${filemd5("${path.root}/main.tf")}"
-  }
-  provisioner "local-exec" {
-    command     = "pip install --target='.python_packages/lib/site-packages' -r requirements.txt"
-    working_dir = "${path.root}/azure_function"
-  }
-}
-
 
