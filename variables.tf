@@ -2,7 +2,7 @@
 
 variable "project" {
   type        = string
-  default     = "cloud-platforms-fh"
+  default     = "cloudplatforms"
   description = "Project name"
 }
 
