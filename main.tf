@@ -12,7 +12,7 @@ terraform {
   # Update this block with the location of your terraform state file
   backend "azurerm" {
     resource_group_name  = "cloud-shell-storage-westeurope"
-    storage_account_name = "csb1003200321a68be4"
+    storage_account_name = "csb1003200321a68be4" # should be in bootstrap
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
     use_oidc             = true
